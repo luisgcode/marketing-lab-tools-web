@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Optimizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+    <polyline points="21 15 16 10 5 21"/>
+  </svg>
+  <h1>Marketing Lab Tools</h1>
+  <span class="badge">Web</span>
+  <nav class="toolnav">
+    <a href="index.html" class="active">Optimizer</a>
+    <a href="inspect.html">Inspector</a>
+    <a href="pdf.html">PDF to Images</a>
+  </nav>
+</header>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <h2>Settings</h2>
+
+    <div class="control-group">
+      <label>
+        Quality
+        <strong id="qualityLabel">95%</strong>
+      </label>
+      <input type="range" id="quality" min="1" max="100" value="95" />
+    </div>
+
+    <div class="control-group">
+      <label>Output format</label>
+      <select id="format">
+        <option value="webp">WebP</option>
+        <option value="jpeg" selected>JPEG (Drupal compatible)</option>
+        <option value="png">PNG</option>
+        <option value="avif">AVIF (best compression)</option>
+      </select>
+    </div>
+
+    <div class="toggle-row">
+      <span>Keep original format</span>
+      <label class="toggle">
+        <input type="checkbox" id="keepFormat" />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row">
+      <span>
+        Fix color profile (sRGB)
+        <span style="display:block;font-size:11px;color:var(--text-muted);margin-top:2px">Converts to sRGB + embeds ICC. Fixes CommerceTools color-model rejects.</span>
+      </span>
+      <label class="toggle">
+        <input type="checkbox" id="fixColor" checked />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="control-group">
+      <label style="margin-bottom:2px">Quick size presets</label>
+      <div class="size-presets" id="sizePresets">
+        <button class="preset-btn" data-w="0"    data-h="0"    title="No resizing">Original</button>
+        <button class="preset-btn" data-w="2048" data-h="1365" title="Hero / full-width banner">2048×1365</button>
+        <button class="preset-btn" data-w="1920" data-h="1080" title="Full HD / desktop hero">1920×1080</button>
+        <button class="preset-btn" data-w="1600" data-h="900"  title="Wide banner">1600×900</button>
+        <button class="preset-btn" data-w="1440" data-h="810"  title="Large desktop">1440×810</button>
+        <button class="preset-btn" data-w="1200" data-h="800"  title="Standard editorial">1200×800</button>
+        <button class="preset-btn" data-w="1200" data-h="630"  title="OG / social share">1200×630</button>
+        <button class="preset-btn" data-w="800"  data-h="600"  title="Product / card image">800×600</button>
+        <button class="preset-btn" data-w="800"  data-h="800"  title="Square product">800×800</button>
+        <button class="preset-btn" data-w="600"  data-h="400"  title="Thumbnail / tile">600×400</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Max width <span style="font-size:11px">(0 = no limit)</span></label>
+      <input type="number" id="maxWidth" value="0" min="0" max="99999" placeholder="px" />
+    </div>
+
+    <div class="control-group">
+      <label>Max height <span style="font-size:11px">(0 = no limit)</span></label>
+      <input type="number" id="maxHeight" value="0" min="0" max="99999" placeholder="px" />
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="stats-bar" id="statsBar">
+      <div class="stat">
+        <div class="stat-value" id="statCount">0</div>
+        <div class="stat-label">Images</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statOriginal">—</div>
+        <div class="stat-label">Original</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value green" id="statSaved">—</div>
+        <div class="stat-label">Saved</div>
+      </div>
+    </div>
+
+    <button class="btn btn-success" id="downloadAllBtn" disabled>
+      Download all (ZIP)
+    </button>
+
+    <button class="btn btn-secondary" id="clearBtn" disabled>
+      Clear results
+    </button>
+  </aside>
+
+  <!-- CONTENT -->
+  <section class="content">
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" multiple accept="image/*,.heic,.heif,.tiff,.tif,.avif" />
+      <div class="dropzone-icon">🖼️</div>
+      <h3>Drop images here</h3>
+      <p>or <strong onclick="document.getElementById('fileInput').click()">click to select</strong></p>
+      <p style="margin-top:8px; font-size:11px">JPG, PNG, WebP, GIF, TIFF, AVIF &mdash; no file limit</p>
+    </div>
+
+
+    <div class="results-header" id="resultsHeader" style="display:none">
+      <h2>Results (<span id="resultCount">0</span>)</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn-icon" id="copyAllBtn" title="Copy summary" style="width:auto;padding:0 10px;font-size:12px">Copy summary</button>
+      </div>
+    </div>
+
+    <div class="results-list" id="resultsList">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-state-icon">📂</div>
+        <p>Your optimized images will appear here</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Processing overlay -->
+<div class="processing-overlay" id="processingOverlay">
+  <div class="processing-card">
+    <strong id="processingTitle">Optimizing images...</strong>
+    <p id="processingSubtitle" style="margin-top:4px">Starting...</p>
+    <div style="margin-top:20px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:8px">
+        <span id="progressCurrent">0 / 0</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:6px;overflow:hidden;width:320px">
+        <div id="progressFillOverlay" style="height:100%;background:var(--accent);border-radius:6px;width:0%;transition:width 0.3s ease"></div>
+      </div>
+      <p id="progressCurrentName" style="font-size:11px;color:var(--text-muted);margin-top:10px;text-align:center;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Sticky credit tab — Marketing Lab -->
+<div class="credit-tab">
+  Marketing Lab &nbsp;·&nbsp; <strong>Luis Guaiquirian</strong>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

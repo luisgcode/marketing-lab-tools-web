@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Inspector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .inspect-wrap { padding: 32px; max-width: 1100px; margin: 0 auto; width: 100%; }
+    .inspect-intro { margin-bottom: 20px; }
+    .inspect-intro h2 { font-size: 20px; margin-bottom: 6px; }
+    .inspect-intro p { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+
+    .idrop {
+      border: 2px dashed rgba(0,0,0,0.15);
+      border-radius: 6px;
+      padding: 48px 24px;
+      text-align: center;
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .idrop:hover, .idrop.drag { border-color: var(--accent); background: rgba(217,49,78,0.03); }
+    .idrop .icon { font-size: 36px; margin-bottom: 14px; opacity: 0.5; }
+    .idrop h3 { font-size: 14px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.01em; }
+    .idrop p { color: var(--text-muted); font-size: 13px; }
+    .idrop p strong { color: var(--accent); cursor: pointer; font-weight: 500; }
+    #ifile { display: none; }
+
+    .icards { margin-top: 24px; display: flex; flex-direction: column; gap: 14px; }
+
+    .icard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left-width: 4px;
+      border-radius: 10px;
+      padding: 16px 18px;
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .icard.ok   { border-left-color: var(--green); }
+    .icard.warn { border-left-color: var(--yellow); }
+    .icard.fail { border-left-color: var(--red); }
+
+    .icard .thumb {
+      width: 64px; height: 64px; border-radius: 8px;
+      object-fit: contain; background: #f0f0f0; border: 1px solid var(--border);
+    }
+    .icard .body h4 { font-size: 14px; margin-bottom: 2px; word-break: break-all; }
+    .icard .badge-verdict {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 2px 8px; border-radius: 4px; margin-bottom: 8px;
+    }
+    .icard.ok   .badge-verdict { background: rgba(26,138,74,0.12);  color: var(--green); }
+    .icard.warn .badge-verdict { background: rgba(176,125,16,0.14); color: var(--yellow); }
+    .icard.fail .badge-verdict { background: rgba(217,49,78,0.12);  color: var(--red); }
+
+    .icard .reason { font-size: 13px; line-height: 1.5; margin-bottom: 8px; }
+    .icard .fix {
+      font-size: 12px; color: var(--text); background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+      line-height: 1.45;
+    }
+    .icard .fix strong { color: var(--accent); }
+
+    .props {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 6px 14px; margin-top: 10px; font-size: 12px;
+    }
+    .props .prop { display: flex; flex-direction: column; }
+    .props .prop .k { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .props .prop .v { font-weight: 600; }
+    .props .prop .v.bad { color: var(--red); }
+    .props .prop .v.good { color: var(--green); }
+
+    .ierror { color: var(--red); font-size: 13px; }
+
+    .legend {
+      margin-top: 24px; font-size: 12px; color: var(--text-muted);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px 16px; line-height: 1.6;
+    }
+    .legend b { color: var(--text); }
+    .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align: middle; }
+    .dot.ok { background: var(--green); } .dot.warn { background: var(--yellow); } .dot.fail { background: var(--red); }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+    <polyline points="21 15 16 10 5 21"/>
+  </svg>
+  <h1>Marketing Lab Tools</h1>
+  <span class="badge">Web</span>
+  <nav class="toolnav">
+    <a href="index.html">Optimizer</a>
+    <a href="inspect.html" class="active">Inspector</a>
+    <a href="pdf.html">PDF to Images</a>
+  </nav>
+</header>
+
+<div class="inspect-wrap">
+  <div class="inspect-intro">
+    <h2>Image Inspector — CommerceTools color check</h2>
+    <p>
+      Drop one or more images and get the color model (sRGB / CMYK / uncalibrated),
+      whether an ICC profile is embedded, and whether the image will <b>pass or fail</b>
+      in CommerceTools. This diagnoses the "Unsupported image data. Not able to identify
+      the color model" error seen in the pipeline log. Nothing is saved or modified: read-only.
+    </p>
+  </div>
+
+  <div class="idrop" id="idrop" onclick="document.getElementById('ifile').click()">
+    <input type="file" id="ifile" multiple accept="image/*,.tiff,.tif,.avif" />
+    <div class="icon">🔍</div>
+    <h3>Drop images here</h3>
+    <p>or <strong>click to select</strong> &mdash; JPG, PNG, TIFF, WebP, AVIF</p>
+  </div>
+
+  <div class="icards" id="icards"></div>
+
+  <div class="legend">
+    <div><span class="dot ok"></span><b>OK</b> — sRGB with ICC profile. CommerceTools accepts it.</div>
+    <div><span class="dot warn"></span><b>WARN</b> — RGB with no embedded profile (uncalibrated). May be rejected.</div>
+    <div><span class="dot fail"></span><b>FAIL</b> — CMYK or unrecognized color model. CommerceTools rejects it for sure.</div>
+    <div style="margin-top:8px">The fix for WARN/FAIL is to reprocess the image through the <a href="index.html" style="color:var(--accent)">Optimizer</a>, which embeds a standard sRGB profile.</div>
+  </div>
+</div>
+
+<script>
+const idrop = document.getElementById('idrop');
+const ifile = document.getElementById('ifile');
+const icards = document.getElementById('icards');
+
+['dragover','dragenter'].forEach(e => idrop.addEventListener(e, ev => { ev.preventDefault(); idrop.classList.add('drag'); }));
+['dragleave','drop'].forEach(e => idrop.addEventListener(e, ev => { ev.preventDefault(); idrop.classList.remove('drag'); }));
+idrop.addEventListener('drop', ev => { if (ev.dataTransfer.files.length) inspect(ev.dataTransfer.files); });
+ifile.addEventListener('change', () => { if (ifile.files.length) inspect(ifile.files); });
+
+function fmtBytes(b) {
+  if (b == null) return '—';
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(0) + ' KB';
+  return (b/1024/1024).toFixed(2) + ' MB';
+}
+
+async function inspect(files) {
+  icards.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Analyzing…</p>';
+  const fd = new FormData();
+  for (const f of files) fd.append('images', f);
+
+  let res;
+  try {
+    res = await fetch('/inspect', { method: 'POST', body: fd });
+  } catch (err) {
+    icards.innerHTML = '<p class="ierror">Connection error: ' + err.message + '</p>';
+    return;
+  }
+  const json = await res.json();
+  if (json.error) { icards.innerHTML = '<p class="ierror">' + json.error + '</p>'; return; }
+
+  // Build thumbnails from the local files (indexed same order as sent)
+  const fileArr = Array.from(files);
+  icards.innerHTML = '';
+  json.results.forEach((r, i) => {
+    const thumbUrl = fileArr[i] ? URL.createObjectURL(fileArr[i]) : '';
+    icards.appendChild(buildCard(r, thumbUrl));
+  });
+}
+
+function buildCard(r, thumbUrl) {
+  const div = document.createElement('div');
+
+  if (r.error) {
+    div.className = 'icard fail';
+    div.innerHTML = `
+      <img class="thumb" src="${thumbUrl}" alt="" />
+      <div class="body">
+        <h4>${r.name}</h4>
+        <p class="ierror">Could not analyze: ${r.error}</p>
+      </div>`;
+    return div;
+  }
+
+  div.className = 'icard ' + r.verdict;
+  const verdictLabel = { ok: 'Pass', warn: 'At risk', fail: 'Fail' }[r.verdict] || r.verdict;
+
+  const spaceBad = r.verdict === 'fail';
+  const profileBad = !r.hasProfile;
+
+  div.innerHTML = `
+    <img class="thumb" src="${thumbUrl}" alt="" />
+    <div class="body">
+      <h4>${r.name}</h4>
+      <span class="badge-verdict">${verdictLabel}</span>
+      <div class="reason">${r.reason}</div>
+      ${r.fix ? `<div class="fix"><strong>Fix:</strong> ${r.fix}</div>` : ''}
+      <div class="props">
+        <div class="prop"><span class="k">Color space</span><span class="v ${spaceBad?'bad':'good'}">${r.space || '—'}</span></div>
+        <div class="prop"><span class="k">ICC profile</span><span class="v ${profileBad?'bad':'good'}">${r.hasProfile ? 'Yes' : 'No'}</span></div>
+        <div class="prop"><span class="k">Channels</span><span class="v">${r.channels ?? '—'}</span></div>
+        <div class="prop"><span class="k">Format</span><span class="v">${r.format || '—'}</span></div>
+        <div class="prop"><span class="k">Dimensions</span><span class="v">${r.width && r.height ? r.width+'×'+r.height : '—'}</span></div>
+        <div class="prop"><span class="k">Depth</span><span class="v">${r.depth || '—'}</span></div>
+        <div class="prop"><span class="k">Density</span><span class="v">${r.density ? r.density+' dpi' : '—'}</span></div>
+        <div class="prop"><span class="k">Size</span><span class="v">${fmtBytes(r.sizeBytes)}</span></div>
+      </div>
+    </div>`;
+  return div;
+}
+</script>
+
+</body>
+</html>

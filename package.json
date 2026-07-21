@@ -1,0 +1,21 @@
+{
+  "name": "marketing-lab-tools-web",
+  "version": "1.0.0",
+  "description": "Marketing Lab Tools — web build. Image Optimizer, Inspector and PDF to Images for the Glen Dimplex Americas web team.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "author": "Luis Guaiquirian — Marketing Lab",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "pdf-to-img": "^6.2.0",
+    "sharp": "^0.34.5"
+  }
+}

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF to Images</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .pdf-wrap { padding: 32px; max-width: 1100px; margin: 0 auto; width: 100%; }
+    .pdf-intro { margin-bottom: 20px; }
+    .pdf-intro h2 { font-size: 20px; margin-bottom: 6px; }
+    .pdf-intro p { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+
+    .pdrop {
+      border: 2px dashed rgba(0,0,0,0.15);
+      border-radius: 6px;
+      padding: 48px 24px;
+      text-align: center;
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pdrop:hover, .pdrop.drag { border-color: var(--accent); background: rgba(217,49,78,0.03); }
+    .pdrop .icon { font-size: 36px; margin-bottom: 14px; opacity: 0.5; }
+    .pdrop h3 { font-size: 14px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.01em; }
+    .pdrop p { color: var(--text-muted); font-size: 13px; }
+    .pdrop p strong { color: var(--accent); cursor: pointer; font-weight: 500; }
+    #pfile { display: none; }
+
+    .pdf-opts {
+      display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end;
+      margin-top: 18px; padding: 16px 18px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    }
+    .pdf-opts .opt { display: flex; flex-direction: column; gap: 5px; }
+    .pdf-opts label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+    .pdf-opts select, .pdf-opts input[type="number"] {
+      font-family: inherit; font-size: 13px; padding: 7px 10px;
+      border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); color: var(--text);
+      min-width: 120px;
+    }
+    .pdf-opts .hint { font-size: 11px; color: var(--text-muted); }
+
+    .pdf-actions { margin-top: 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .btn {
+      font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+      padding: 9px 18px; border-radius: 6px; border: 1px solid var(--accent);
+      background: var(--accent); color: #fff; transition: opacity .2s;
+    }
+    .btn:hover { opacity: .9; }
+    .btn.secondary { background: transparent; color: var(--accent); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .pdf-summary { font-size: 13px; color: var(--text-muted); }
+
+    .pgrid {
+      margin-top: 22px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    .pcard {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden; display: flex; flex-direction: column;
+    }
+    .pcard .pimg {
+      width: 100%; aspect-ratio: 3/4; object-fit: contain;
+      background: #f0f0f0; border-bottom: 1px solid var(--border);
+    }
+    .pcard .pmeta { padding: 10px 12px; font-size: 12px; }
+    .pcard .pmeta .pname { font-weight: 600; word-break: break-all; margin-bottom: 3px; }
+    .pcard .pmeta .pdim { color: var(--text-muted); }
+    .pcard .pdl {
+      display: block; text-align: center; font-size: 12px; font-weight: 500;
+      padding: 8px; border-top: 1px solid var(--border); color: var(--accent);
+      cursor: pointer; text-decoration: none;
+    }
+    .pcard .pdl:hover { background: rgba(217,49,78,0.05); }
+
+    .perror { color: var(--red); font-size: 13px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+    <polyline points="21 15 16 10 5 21"/>
+  </svg>
+  <h1>Marketing Lab Tools</h1>
+  <span class="badge">Web</span>
+  <nav class="toolnav">
+    <a href="index.html">Optimizer</a>
+    <a href="inspect.html">Inspector</a>
+    <a href="pdf.html" class="active">PDF to Images</a>
+  </nav>
+</header>
+
+<div class="pdf-wrap">
+  <div class="pdf-intro">
+    <h2>PDF to Images — one optimized image per page</h2>
+    <p>
+      Drop a PDF and get a light, high-quality image per page, ready to drop into Figma
+      to mark up, cross out, and annotate. Runs locally: no page limit, no watermark,
+      no upload to a third party. Images are optimized so they stay light for Figma.
+    </p>
+  </div>
+
+  <div class="pdrop" id="pdrop" onclick="document.getElementById('pfile').click()">
+    <input type="file" id="pfile" accept="application/pdf,.pdf" />
+    <div class="icon">📄</div>
+    <h3>Drop a PDF here</h3>
+    <p>or <strong>click to select</strong> &mdash; one image per page</p>
+  </div>
+
+  <div class="pdf-opts">
+    <div class="opt">
+      <label for="opt-format">Format</label>
+      <select id="opt-format">
+        <option value="jpeg" selected>JPG (light, best for Figma)</option>
+        <option value="png">PNG (lossless, heavier)</option>
+      </select>
+    </div>
+    <div class="opt">
+      <label for="opt-width">Max width (px)</label>
+      <input type="number" id="opt-width" value="2000" min="500" max="6000" step="100" />
+      <span class="hint">Bigger = sharper but heavier</span>
+    </div>
+    <div class="opt" id="quality-opt">
+      <label for="opt-quality">JPG quality</label>
+      <input type="number" id="opt-quality" value="82" min="40" max="100" step="1" />
+      <span class="hint">82 is the sweet spot</span>
+    </div>
+  </div>
+
+  <div class="pdf-actions" id="pactions" style="display:none">
+    <button class="btn" id="dl-all">Download all pages</button>
+    <span class="pdf-summary" id="psummary"></span>
+  </div>
+
+  <div class="pgrid" id="pgrid"></div>
+  <div id="perror"></div>
+</div>
+
+<script>
+const pdrop = document.getElementById('pdrop');
+const pfile = document.getElementById('pfile');
+const pgrid = document.getElementById('pgrid');
+const perror = document.getElementById('perror');
+const pactions = document.getElementById('pactions');
+const psummary = document.getElementById('psummary');
+const dlAll = document.getElementById('dl-all');
+const optFormat = document.getElementById('opt-format');
+const optWidth = document.getElementById('opt-width');
+const optQuality = document.getElementById('opt-quality');
+const qualityOpt = document.getElementById('quality-opt');
+
+let lastResults = [];
+
+optFormat.addEventListener('change', () => {
+  qualityOpt.style.display = optFormat.value === 'png' ? 'none' : '';
+});
+
+['dragover','dragenter'].forEach(e => pdrop.addEventListener(e, ev => { ev.preventDefault(); pdrop.classList.add('drag'); }));
+['dragleave','drop'].forEach(e => pdrop.addEventListener(e, ev => { ev.preventDefault(); pdrop.classList.remove('drag'); }));
+pdrop.addEventListener('drop', ev => { if (ev.dataTransfer.files.length) convert(ev.dataTransfer.files[0]); });
+pfile.addEventListener('change', () => { if (pfile.files.length) convert(pfile.files[0]); });
+
+function fmtBytes(b) {
+  if (b == null) return '—';
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(0) + ' KB';
+  return (b/1024/1024).toFixed(2) + ' MB';
+}
+
+async function convert(file) {
+  perror.textContent = '';
+  pgrid.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Rendering pages…</p>';
+  pactions.style.display = 'none';
+
+  const fd = new FormData();
+  fd.append('pdf', file);
+  fd.append('format', optFormat.value);
+  fd.append('maxWidth', optWidth.value);
+  fd.append('quality', optQuality.value);
+
+  let res;
+  try {
+    res = await fetch('/pdf-to-images', { method: 'POST', body: fd });
+  } catch (err) {
+    pgrid.innerHTML = '';
+    perror.className = 'perror';
+    perror.textContent = 'Connection error: ' + err.message;
+    return;
+  }
+  const json = await res.json();
+  if (json.error) {
+    pgrid.innerHTML = '';
+    perror.className = 'perror';
+    perror.textContent = json.error;
+    return;
+  }
+
+  lastResults = json.results;
+  pgrid.innerHTML = '';
+  let totalSize = 0;
+  json.results.forEach(r => {
+    totalSize += r.size;
+    const url = 'data:' + r.mimeType + ';base64,' + r.data;
+    const card = document.createElement('div');
+    card.className = 'pcard';
+    card.innerHTML = `
+      <img class="pimg" src="${url}" alt="Page ${r.page}" />
+      <div class="pmeta">
+        <div class="pname">Page ${r.page}</div>
+        <div class="pdim">${r.width}×${r.height} · ${fmtBytes(r.size)}</div>
+      </div>
+      <a class="pdl" href="${url}" download="${r.outputName}">Download</a>`;
+    pgrid.appendChild(card);
+  });
+
+  psummary.textContent = json.results.length + ' pages · ' + fmtBytes(totalSize) + ' total';
+  pactions.style.display = 'flex';
+}
+
+dlAll.addEventListener('click', async () => {
+  for (const r of lastResults) {
+    const a = document.createElement('a');
+    a.href = 'data:' + r.mimeType + ';base64,' + r.data;
+    a.download = r.outputName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    await new Promise(res => setTimeout(res, 150)); // stagger so the browser doesn't block
+  }
+});
+</script>
+
+</body>
+</html>
